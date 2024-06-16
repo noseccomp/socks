@@ -70,6 +70,23 @@ func DialSocksProxy(socksType int, proxy string) func(string, string) (net.Conn,
 	return (&config{Proto: socksType, Host: proxy}).dialFunc()
 }
 
+func DialDNSProxy(proxyURI string) func(string) ([]byte, error) {
+	cfg, err := parse(proxyURI)
+	if err != nil {
+		return dnsError(err)
+	}
+	return cfg.dialDNSFunc()
+}
+
+func (c *config) dialDNSFunc() func(string) ([]byte, error){
+	switch c.Proto {
+	case SOCKS5:
+		return func(addr string) ([]byte, error){ return c.dialDNS(addr)}
+	}
+
+	return dnsError(fmt.Errorf("unknown SOCKS protocol %v", c.Proto))
+}
+
 func (c *config) dialFunc() func(string, string) (net.Conn, error) {
 	switch c.Proto {
 	case SOCKS5:
@@ -86,6 +103,12 @@ func (c *config) dialFunc() func(string, string) (net.Conn, error) {
 
 func dialError(err error) func(string, string) (net.Conn, error) {
 	return func(_, _ string) (net.Conn, error) {
+		return nil, err
+	}
+}
+
+func dnsError(err error) func(string) ([]byte, error) {
+	return func(string) ([]byte, error) {
 		return nil, err
 	}
 }
