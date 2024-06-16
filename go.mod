@@ -1,4 +1,4 @@
-module github.com/noseccomp/socks
+module github.com/noseccomp/winesocks
 
 go 1.9
 
